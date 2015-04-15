@@ -1,0 +1,17 @@
+{
+    "name": "bugadani/GraPHPy",
+    "description": "A simple mathematical graph library",
+    "minimum-stability": "dev",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Dániel Buga",
+            "email": "bugadani@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "GraPHPy\\": "src/"
+        }
+    }
+}
