@@ -1,5 +1,5 @@
 {
-    "name": "bugadani/GraPHPy",
+    "name": "bugadani/graphpy",
     "description": "A simple mathematical graph library",
     "minimum-stability": "dev",
     "license": "MIT",
