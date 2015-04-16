@@ -13,7 +13,6 @@ class GraphAlgorithms
      */
     public static function containsCycle(Graph $g, $x0 = null)
     {
-
         //We are assuming that the graph is directed
         if (!$g->directed) {
             //If it is not, it is cyclic if it has edges
@@ -22,8 +21,14 @@ class GraphAlgorithms
 
         $cyclic = false;
         $func = function (Vertex $v, array $discovered) use (&$cyclic) {
-            $cyclic |= in_array($v, $discovered);
-
+            //Loop edge
+            if (in_array($v, $v->getAdjacentVertices())) {
+                $cyclic = true;
+            }
+            //Already discovered edge
+            if (in_array($v, $discovered, true) && $discovered !== [$v]) {
+                $cyclic = true;
+            }
             //Stop traversing if the graph is cyclic
             return !$cyclic;
         };
@@ -31,15 +36,15 @@ class GraphAlgorithms
         if ($x0 === null) {
             $vertices = $g->getSourceVertices();
             if (empty($vertices)) {
-                //If the graph has no source vertices but is connected
+                //If the graph has no source vertices
                 //the graph is cyclic
-                return static::isConnected($g);
+                return true;
             }
 
             //The graph should be checked from every source vertex
             //There may be cyclic subgraphs that could be missed otherwise
-            foreach (array_keys($vertices) as $vertex) {
-                static::dfs($g, $vertex, $func);
+            foreach ($vertices as $vertex) {
+                static::dfs($g, $vertex->label, $func);
             }
         } else {
             //A specific vertex is given - check the reachable subgraph only
@@ -51,19 +56,37 @@ class GraphAlgorithms
 
     /**
      * @param Graph $g
-     * @param mixed $x0
      * @return boolean Whether the graph is connected
      */
-    public static function isConnected(Graph $g, $x0 = null)
+    public static function isConnected(Graph $g)
     {
-        if ($x0 === null) {
-            if ($g->directed) {
-                $vertices = $g->getSourceVertices();
-            } else {
-                $vertices = $g->getVertices();
+        // the null graph and singleton graph are considered connected
+        if ($g->order <= 1) {
+            return true;
+        }
+
+        // empty graphs on n>=2 nodes are disconnected
+        if ($g->empty) {
+            return false;
+        }
+
+        $vertices = $g->getVertices();
+
+        $source = reset($vertices);
+        $x0 = $source->label;
+
+        if ($g->directed) {
+            $undirectedG = new Graph();
+            foreach ($vertices as $vertex) {
+                $undirectedG->addVertex($vertex->label);
+            }
+            foreach ($vertices as $vertex) {
+                foreach ($vertex->getDiscoveryEdges() as $edge) {
+                    $undirectedG->addEdge($vertex->label, $edge->sink->label);
+                }
             }
 
-            $x0 = reset($vertices);
+            $g = $undirectedG;
         }
 
         return count(self::dfs($g, $x0)) == $g->order;
@@ -90,19 +113,25 @@ class GraphAlgorithms
             if (in_array($v, $discovered)) {
                 continue;
             }
-            $discovered[] = $v;
             if ($callbackIsCallable) {
                 if (!$callback($v, $discovered)) {
                     break;
                 }
             }
+            $discovered[] = $v;
 
-            foreach ($v->getAdjacentVertecies() as $adj) {
+            foreach ($v->getAdjacentVertices() as $adj) {
                 $stack->push($adj);
             }
         }
 
         return $discovered;
+    }
+
+    public static function reachable(Graph $g, $source, $sink)
+    {
+        $reachable = self::dfs($g, $source);
+        return in_array($sink, $reachable, true);
     }
 
 }

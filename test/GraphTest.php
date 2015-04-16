@@ -43,9 +43,10 @@ class GraphTest extends PHPUnit_Framework_TestCase
     public function testEdges(Graph $graph)
     {
         $graph->addEdge(1, 2, 1);
+        $graph->addEdge(1, 3, 1);
         $graph->addEdge(2, 3, 2);
 
-        $this->assertEquals(2, $graph->size);
+        $this->assertEquals(3, $graph->size);
 
         return $graph;
     }
@@ -60,14 +61,24 @@ class GraphTest extends PHPUnit_Framework_TestCase
 
         $v2 = $vertex1->getAdjacentVertices();
 
-        $this->assertCount(1, $v2);
-        $vertex2 = $v2[0];
-        $this->assertEquals(2, $vertex2->label);
+        $this->assertCount(2, $v2);
+        $this->assertEquals(2, $v2[0]->label);
+        $this->assertEquals(3, $v2[1]->label);
 
-        $v3 = $vertex2->getAdjacentVertices();
+        $v3 = $v2[0]->getAdjacentVertices();
 
         $this->assertCount(1, $v3);
-        $vertex3 = $v3[0];
-        $this->assertEquals(3, $vertex3->label);
+        $this->assertEquals(3, $v3[0]->label);
+    }
+
+    public function testSourceSinkVerticesAreCorrect()
+    {
+        $graph = new Graph([1, 2, 3, 4], [[1, 2], [2, 3], [1, 3]], true);
+
+        $sinkArray = $graph->getSinkVertices();
+        $sourceArray = $graph->getSourceVertices();
+
+        $this->assertCount(1, $sourceArray);
+        $this->assertCount(1, $sinkArray);
     }
 }

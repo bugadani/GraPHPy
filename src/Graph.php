@@ -8,6 +8,7 @@ namespace GraPHPy;
  * @property int $order
  * @property int $size
  * @property bool $directed
+ * @property bool $empty
  */
 class Graph
 {
@@ -34,26 +35,15 @@ class Graph
      */
     private $directed;
     private $sourceVertices = [];
+    private $sinkVertices = [];
 
     public function __construct(array $vertices = [], array $edges = [], $directed = false)
     {
         $this->directed = (bool)$directed;
         array_walk($vertices, [$this, 'addVertex']);
-        foreach ($edges as $source => $sink) {
+        foreach ($edges as $edge) {
+            list($source, $sink) = $edge;
             $this->addEdge($source, $sink);
-        }
-    }
-
-    public function __get($k)
-    {
-        switch ($k) {
-            case 'order':
-                return count($this->vertices);
-            case 'size':
-            case 'directed':
-                return $this->$k;
-            default:
-                throw new \InvalidArgumentException("Invalid property: {$k}");
         }
     }
 
@@ -67,12 +57,22 @@ class Graph
         $vertex1 = $this->getVertex($v1);
         $vertex2 = $this->getVertex($v2);
 
+        $this->edges[$v1][] = new Edge($vertex1, $vertex2, $weight);
         if ($this->directed) {
-            unset($this->sourceVertices[$v1]);
+            if (!isset($this->sinkVertices[$v1])) {
+                $this->sourceVertices[$v1] = $vertex1;
+            }
+
+            if ($v1 !== $v2) {
+                if (!isset($this->sourceVertices[$v2])) {
+                    $this->sinkVertices[$v2] = $vertex2;
+                }
+                unset($this->sourceVertices[$v2]);
+                unset($this->sinkVertices[$v1]);
+            }
         } else {
             $this->edges[$v2][] = new Edge($vertex2, $vertex1, $weight);
         }
-        $this->edges[$v1][] = new Edge($vertex1, $vertex2, $weight);
         $this->size++;
     }
 
@@ -88,6 +88,21 @@ class Graph
         return $this->vertices[$vertex];
     }
 
+    public function __get($k)
+    {
+        switch ($k) {
+            case 'order':
+                return count($this->vertices);
+            case 'size':
+            case 'directed':
+                return $this->$k;
+            case 'empty':
+                return $this->size == 0;
+            default:
+                throw new \InvalidArgumentException("Invalid property: {$k}");
+        }
+    }
+
     /**
      * @param $vertex
      */
@@ -99,10 +114,6 @@ class Graph
 
         $this->vertices[$vertex] = new Vertex($this, $vertex);
         $this->edges[$vertex] = [];
-
-        if ($this->directed) {
-            $this->sourceVertices[$vertex] = $this->vertices[$vertex];
-        }
     }
 
     /**
@@ -119,6 +130,14 @@ class Graph
     public function getSourceVertices()
     {
         return $this->sourceVertices;
+    }
+
+    /**
+     * @return Vertex[]
+     */
+    public function getSinkVertices()
+    {
+        return $this->sinkVertices;
     }
 
     public function getEdgesFromVertex(Vertex $v)

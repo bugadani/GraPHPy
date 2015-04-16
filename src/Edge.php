@@ -4,6 +4,14 @@ namespace GraPHPy;
 
 use InvalidArgumentException;
 
+/**
+ * Class Edge
+ * @package GraPHPy
+ *
+ * @property Vertex $source
+ * @property Vertex $sink
+ * @property int    $weight
+ */
 class Edge
 {
 

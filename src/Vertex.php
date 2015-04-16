@@ -48,11 +48,12 @@ class Vertex
      */
     public function getAdjacentVertices()
     {
-        $vertices = [];
-        foreach ($this->graph->getEdgesFromVertex($this) as $edge) {
-            $vertices[] = $edge->sink;
-        }
-        return $vertices;
+        return array_map(
+            function (Edge $edge) {
+                return $edge->sink;
+            },
+            $this->getDiscoveryEdges($this)
+        );
     }
 
 }
