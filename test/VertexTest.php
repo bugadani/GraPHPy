@@ -16,6 +16,8 @@ class VertexTest extends PHPUnit_Framework_TestCase
         $this->assertCount(1, $graph->getVertex(2)->getAdjacentVertices());
         $this->assertCount(0, $graph->getVertex(3)->getAdjacentVertices());
 
+        $this->assertSame("2", (string)$graph->getVertex(2));
+
         $undirected = new Graph([1, 2, 3], [
             [1, 2],
             [1, 3],

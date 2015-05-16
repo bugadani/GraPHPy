@@ -31,6 +31,21 @@ class GraphAlgorithmsTest extends PHPUnit_Framework_TestCase
                     [3, 3],
                     [3, 2]
                 ], true)
+            ],
+            [
+                true,
+                new Graph([1, 2, 3], [
+                    [1, 2],
+                    [2, 3],
+                    [3, 2]
+                ], true)
+            ],
+            [
+                true,
+                new Graph([1, 2, 3], [
+                    [2, 3],
+                    [3, 2]
+                ], true)
             ]
         ];
     }
@@ -59,12 +74,14 @@ class GraphAlgorithmsTest extends PHPUnit_Framework_TestCase
 
     public function testConnectedDirected()
     {
+        $empty = new Graph([1, 2], [], true);
         $connected = new Graph([1, 2, 3], [
             [1, 2],
             [2, 3]
         ], true);
         $notConnected = new Graph([1, 2, 3], [[1, 2]], true);
 
+        $this->assertFalse(GraphAlgorithms::isConnected($empty));
         $this->assertFalse(GraphAlgorithms::isConnected($notConnected));
         $this->assertTrue(GraphAlgorithms::isConnected($connected));
     }

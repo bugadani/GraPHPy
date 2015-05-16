@@ -20,15 +20,20 @@ class GraphAlgorithms
         }
 
         $cyclic = false;
-        $func = function (Vertex $v, array $discovered) use (&$cyclic) {
+        $func = function (Vertex $v, array $discovered, array $recursionStack) use (&$cyclic) {
+
+            $adjacentVertices = $v->getAdjacentVertices();
+
             //Loop edge
-            if (in_array($v, $v->getAdjacentVertices())) {
+            if (in_array($v, $adjacentVertices)) {
                 $cyclic = true;
             }
-            //Already discovered edge
-            if (in_array($v, $discovered, true) && $discovered !== [$v]) {
+
+            //This is needed for directed graphs
+            if (array_intersect($adjacentVertices, $recursionStack) !== []) {
                 $cyclic = true;
             }
+
             //Stop traversing if the graph is cyclic
             return !$cyclic;
         };
@@ -101,27 +106,40 @@ class GraphAlgorithms
      */
     public static function dfs(Graph $g, $vertex, $callback = null)
     {
-        $stack = new \SplStack();
-        $stack->push($g->getVertex($vertex));
+        $stack = [$g->getVertex($vertex)];
 
         $callbackIsCallable = is_callable($callback);
         $discovered = [];
 
-        while (!$stack->isEmpty()) {
-            $v = $stack->pop();
+        $recursionStack = [];
+
+        while (!empty($stack)) {
+            $v = array_pop($stack);
 
             if (in_array($v, $discovered)) {
                 continue;
             }
+            $discovered[] = $v;
+
             if ($callbackIsCallable) {
-                if (!$callback($v, $discovered)) {
+                if (!$callback($v, $discovered, $recursionStack)) {
                     break;
                 }
             }
-            $discovered[] = $v;
 
-            foreach ($v->getAdjacentVertices() as $adj) {
-                $stack->push($adj);
+            array_push($recursionStack, null);
+            array_push($recursionStack, $v);
+
+            $adjacent = $v->getAdjacentVertices();
+            if(empty($adjacent)) {
+                while(end($recursionStack) !== null) {
+                    array_pop($recursionStack);
+                }
+                array_pop($recursionStack);
+            } else {
+                foreach ($adjacent as $adj) {
+                    array_push($stack, $adj);
+                }
             }
         }
 
