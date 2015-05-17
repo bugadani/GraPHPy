@@ -21,7 +21,6 @@ class GraphAlgorithms
 
         $cyclic = false;
         $func = function (Vertex $v, array $discovered, array $recursionStack) use (&$cyclic) {
-
             $adjacentVertices = $v->getAdjacentVertices();
 
             //Loop edge
@@ -106,7 +105,7 @@ class GraphAlgorithms
      */
     public static function dfs(Graph $g, $vertex, $callback = null)
     {
-        $stack = [$g->getVertex($vertex)];
+        $stack = [[$g->getVertex($vertex)]];
 
         $callbackIsCallable = is_callable($callback);
         $discovered = [];
@@ -114,32 +113,26 @@ class GraphAlgorithms
         $recursionStack = [];
 
         while (!empty($stack)) {
-            $v = array_pop($stack);
-
-            if (in_array($v, $discovered)) {
-                continue;
-            }
-            $discovered[] = $v;
-
-            if ($callbackIsCallable) {
-                if (!$callback($v, $discovered, $recursionStack)) {
-                    break;
-                }
-            }
-
-            array_push($recursionStack, null);
-            array_push($recursionStack, $v);
-
-            $adjacent = $v->getAdjacentVertices();
-            if(empty($adjacent)) {
-                while(end($recursionStack) !== null) {
-                    array_pop($recursionStack);
-                }
+            $vertices = array_pop($stack);
+            if (empty($vertices)) {
                 array_pop($recursionStack);
             } else {
-                foreach ($adjacent as $adj) {
-                    array_push($stack, $adj);
+                $currentVertex = array_pop($vertices);
+                array_push($stack, $vertices);
+
+                if (in_array($currentVertex, $discovered)) {
+                    continue;
                 }
+                $discovered[] = $currentVertex;
+
+                if ($callbackIsCallable) {
+                    if (!$callback($currentVertex, $discovered, $recursionStack)) {
+                        break;
+                    }
+                }
+
+                array_push($recursionStack, $currentVertex);
+                array_push($stack, $currentVertex->getAdjacentVertices());
             }
         }
 
