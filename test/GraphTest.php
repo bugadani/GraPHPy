@@ -66,9 +66,36 @@ class GraphTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(3, $v2[1]->label);
 
         $v3 = $v2[0]->getAdjacentVertices();
+        $v4 = $v2[0]->getReachingVertices();
 
         $this->assertCount(1, $v3);
+        $this->assertCount(1, $v4);
         $this->assertEquals(3, $v3[0]->label);
+        $this->assertEquals(1, $v4[0]->label);
+    }
+
+    public function testVertexCanBeDeleted()
+    {
+        $graph = new Graph([1, 2, 3], [[1, 2], [2, 3], [1, 3]], true);
+
+        $graph->removeVertex(2);
+        $sinkArray = $graph->getSinkVertices();
+        $sourceArray = $graph->getSourceVertices();
+
+        $this->assertCount(1, $sourceArray);
+        $this->assertCount(1, $sinkArray);
+
+        $this->assertSame(reset($sourceArray), $graph->getVertex(1));
+        $this->assertSame(reset($sinkArray), $graph->getVertex(3));
+
+        $graph->removeVertex(3);
+        $sinkArray = $graph->getSinkVertices();
+        $sourceArray = $graph->getSourceVertices();
+
+        $this->assertCount(1, $sourceArray);
+        $this->assertCount(1, $sinkArray);
+
+        $this->assertSame(reset($sourceArray), reset($sinkArray));
     }
 
     public function testSourceSinkVerticesAreCorrect()

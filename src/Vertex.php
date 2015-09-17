@@ -44,6 +44,14 @@ class Vertex
     }
 
     /**
+     * @return Edge[]
+     */
+    public function getInwardEdges()
+    {
+        return $this->graph->getEdgesToVertex($this);
+    }
+
+    /**
      * @return Vertex[]
      */
     public function getAdjacentVertices()
@@ -52,7 +60,20 @@ class Vertex
             function (Edge $edge) {
                 return $edge->sink;
             },
-            $this->getDiscoveryEdges($this)
+            $this->getDiscoveryEdges()
+        );
+    }
+
+    /**
+     * @return Vertex[]
+     */
+    public function getReachingVertices()
+    {
+        return array_map(
+            function (Edge $edge) {
+                return $edge->source;
+            },
+            $this->getInwardEdges()
         );
     }
 
