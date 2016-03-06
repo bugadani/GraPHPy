@@ -47,8 +47,14 @@ class GraphAlgorithms
 
             //The graph should be checked from every source vertex
             //There may be cyclic subgraphs that could be missed otherwise
+            $visited = [];
             foreach ($vertices as $vertex) {
-                static::dfs($g, $vertex->label, $func);
+                $visited = array_merge($visited, static::dfs($g, $vertex->label, $func));
+            }
+
+            //Check if there are any subgraphs without sources (not visited by above algorithm)
+            if (count(array_unique($visited)) !== $g->order) {
+                return true;
             }
         } else {
             //A specific vertex is given - check the reachable subgraph only
@@ -86,7 +92,7 @@ class GraphAlgorithms
             }
             foreach ($vertices as $vertex) {
                 foreach ($vertex->getDiscoveryEdges() as $edge) {
-                    $undirectedG->addEdge($vertex->label, $edge->sink->label);
+                    $undirectedG->getVertex($vertex->label)->addOutEdgeToId($edge->sink->label);
                 }
             }
 

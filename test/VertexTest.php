@@ -27,6 +27,12 @@ class VertexTest extends PHPUnit_Framework_TestCase
         $this->assertCount(2, $undirected->getVertex(1)->getAdjacentVertices());
         $this->assertCount(2, $undirected->getVertex(2)->getAdjacentVertices());
         $this->assertCount(2, $undirected->getVertex(3)->getAdjacentVertices());
+
+        $undirected = new Graph([1], [
+            [1, 1]
+        ]);
+
+        $this->assertCount(1, $undirected->getVertex(1)->getAdjacentVertices());
     }
 
     public function testDiscoveryEdges()

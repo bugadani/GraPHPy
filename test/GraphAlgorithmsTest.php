@@ -82,7 +82,7 @@ class GraphAlgorithmsTest extends PHPUnit_Framework_TestCase
     /**
      * @dataProvider cyclicProvider
      *
-     * @param bool  $isCyclic
+     * @param bool $isCyclic
      * @param Graph $graph
      */
     public function testCyclic($isCyclic, Graph $graph)
@@ -92,11 +92,11 @@ class GraphAlgorithmsTest extends PHPUnit_Framework_TestCase
 
     public function testConnectedNotDirected()
     {
-        $connected    = new Graph(
+        $connected = new Graph(
             [1, 2, 3], [
-                         [1, 2],
-                         [2, 3]
-                     ]
+                [1, 2],
+                [2, 3]
+            ]
         );
         $notConnected = new Graph([1, 2, 3], [[1, 2]]);
 
@@ -106,8 +106,8 @@ class GraphAlgorithmsTest extends PHPUnit_Framework_TestCase
 
     public function testConnectedDirected()
     {
-        $empty        = new Graph([1, 2], [], true);
-        $connected    = new Graph(
+        $empty = new Graph([1, 2], [], true);
+        $connected = new Graph(
             [1, 2, 3], [
             [1, 2],
             [2, 3]
@@ -122,7 +122,7 @@ class GraphAlgorithmsTest extends PHPUnit_Framework_TestCase
 
     public function testDFS()
     {
-        $edges      = [
+        $edges = [
             [1, 2],
             [1, 3],
             [2, 5],
@@ -131,7 +131,7 @@ class GraphAlgorithmsTest extends PHPUnit_Framework_TestCase
             [4, 2]
         ];
         $undirected = new Graph([1, 2, 3, 4, 5], $edges);
-        $directed   = new Graph([1, 2, 3, 4, 5], $edges, true);
+        $directed = new Graph([1, 2, 3, 4, 5], $edges, true);
 
         $this->assertEquals(
             [

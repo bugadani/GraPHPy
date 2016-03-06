@@ -2,7 +2,7 @@
 
 use GraPHPy\Graph;
 
-class GraphTest extends PHPUnit_Framework_TestCase
+class GraphTest extends \PHPUnit_Framework_TestCase
 {
     public function testVerticesGetCreated()
     {
@@ -42,9 +42,9 @@ class GraphTest extends PHPUnit_Framework_TestCase
      */
     public function testEdges(Graph $graph)
     {
-        $graph->addEdge(1, 2, 1);
-        $graph->addEdge(1, 3, 1);
-        $graph->addEdge(2, 3, 2);
+        $graph->getVertex(1)->addOutEdgeToId(2, 1);
+        $graph->getVertex(1)->addOutEdgeToId(3, 1);
+        $graph->getVertex(2)->addOutEdgeToId(3, 2);
 
         $this->assertEquals(3, $graph->size);
 
@@ -79,6 +79,8 @@ class GraphTest extends PHPUnit_Framework_TestCase
         $graph = new Graph([1, 2, 3], [[1, 2], [2, 3], [1, 3]], true);
 
         $graph->removeVertex(2);
+        $this->assertEquals(2, $graph->order);
+
         $sinkArray = $graph->getSinkVertices();
         $sourceArray = $graph->getSourceVertices();
 
@@ -89,6 +91,8 @@ class GraphTest extends PHPUnit_Framework_TestCase
         $this->assertSame(reset($sinkArray), $graph->getVertex(3));
 
         $graph->removeVertex(3);
+        $this->assertEquals(1, $graph->order);
+
         $sinkArray = $graph->getSinkVertices();
         $sourceArray = $graph->getSourceVertices();
 
@@ -100,12 +104,19 @@ class GraphTest extends PHPUnit_Framework_TestCase
 
     public function testSourceSinkVerticesAreCorrect()
     {
-        $graph = new Graph([1, 2, 3, 4], [[1, 2], [2, 3], [1, 3]], true);
+        $graph = new Graph([0, 1, 2, 3, 4], [[0, 1], [1, 2], [2, 3], [3, 4], [1, 3]], true);
 
         $sinkArray = $graph->getSinkVertices();
         $sourceArray = $graph->getSourceVertices();
 
         $this->assertCount(1, $sourceArray);
         $this->assertCount(1, $sinkArray);
+
+        $this->assertTrue(in_array($graph->getVertex(0), $sourceArray));
+        $this->assertFalse(in_array($graph->getVertex(1), $sourceArray));
+        $this->assertFalse(in_array($graph->getVertex(1), $sinkArray));
+
+        $this->assertFalse(in_array($graph->getVertex(3), $sinkArray));
+        $this->assertTrue(in_array($graph->getVertex(4), $sinkArray));
     }
 }

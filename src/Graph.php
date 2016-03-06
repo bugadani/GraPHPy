@@ -5,8 +5,8 @@ namespace GraPHPy;
 /**
  * Simple class that represents a mathematical graph
  *
- * @property int  $order
- * @property int  $size
+ * @property int $order
+ * @property int $size
  * @property bool $directed
  * @property bool $empty
  */
@@ -27,7 +27,7 @@ class Graph
      * @var Edge[][]
      */
     private $edges = [];
-    private $size  = 0;
+    private $size = 0;
 
     /**
      * Whether the graph is directed
@@ -36,7 +36,7 @@ class Graph
      */
     private $directed;
     private $sourceVertices = [];
-    private $sinkVertices   = [];
+    private $sinkVertices = [];
 
     public function __construct(array $vertices = [], array $edges = [], $directed = false)
     {
@@ -44,36 +44,38 @@ class Graph
         array_walk($vertices, [$this, 'addVertex']);
         foreach ($edges as $edge) {
             list($source, $sink) = $edge;
-            $this->addEdge($source, $sink);
+            $this->getVertex($source)->addOutEdgeToId($sink);
         }
     }
 
-    /**
-     * @param     $v1
-     * @param     $v2
-     * @param int $weight
-     */
-    public function addEdge($v1, $v2, $weight = 1)
+    private function updateSource(Vertex $v)
     {
-        $vertex1 = $this->getVertex($v1);
-        $vertex2 = $this->getVertex($v2);
-
-        $this->edges[ $v1 ][] = new Edge($vertex1, $vertex2, $weight);
-        if ($this->directed) {
-            if (!isset($this->sinkVertices[ $v1 ])) {
-                $this->sourceVertices[ $v1 ] = $vertex1;
-            }
-
-            if ($v1 !== $v2) {
-                if (!isset($this->sourceVertices[ $v2 ])) {
-                    $this->sinkVertices[ $v2 ] = $vertex2;
-                }
-                unset($this->sourceVertices[ $v2 ]);
-                unset($this->sinkVertices[ $v1 ]);
-            }
+        if ($v->isSource) {
+            $this->sourceVertices[$v->label] = $v;
         } else {
-            $this->edges[ $v2 ][] = new Edge($vertex2, $vertex1, $weight);
+            unset($this->sourceVertices[$v->label]);
         }
+    }
+
+    private function updateSink(Vertex $v)
+    {
+        if ($v->isSink) {
+            $this->sinkVertices[$v->label] = $v;
+        } else {
+            unset($this->sinkVertices[$v->label]);
+        }
+    }
+
+    public function addEdge(Edge $e)
+    {
+        $this->edges[$e->source->label][] = $e;
+
+        $this->updateSource($e->source);
+        $this->updateSource($e->sink);
+
+        $this->updateSink($e->source);
+        $this->updateSink($e->sink);
+
         $this->size++;
     }
 
@@ -84,11 +86,11 @@ class Graph
      */
     public function getVertex($vertex)
     {
-        if (!isset($this->vertices[ $vertex ])) {
+        if (!isset($this->vertices[$vertex])) {
             throw new \OutOfBoundsException("Vertex {$vertex} is not in the graph");
         }
 
-        return $this->vertices[ $vertex ];
+        return $this->vertices[$vertex];
     }
 
     public function __get($k)
@@ -97,8 +99,9 @@ class Graph
             case 'order':
                 return count($this->vertices);
             case 'size':
+                return $this->directed ? $this->size : ($this->size / 2);
             case 'directed':
-                return $this->$k;
+                return $this->directed;
             case 'empty':
                 return $this->size == 0;
             default:
@@ -111,12 +114,10 @@ class Graph
      */
     public function addVertex($vertex)
     {
-        if (isset($this->vertices[ $vertex ])) {
-            return;
+        if (!isset($this->vertices[$vertex])) {
+            $this->vertices[$vertex] = new Vertex($this, $vertex);
+            $this->edges[$vertex] = [];
         }
-
-        $this->vertices[ $vertex ] = new Vertex($this, $vertex);
-        $this->edges[ $vertex ]    = [];
     }
 
     /**
@@ -124,63 +125,52 @@ class Graph
      */
     public function removeVertex($vertexLabel)
     {
-        if (!isset($this->vertices[ $vertexLabel ])) {
+        if (!isset($this->vertices[$vertexLabel])) {
             return;
         }
 
-        $vertex    = $this->vertices[ $vertexLabel ];
-        $edgesFrom = $this->edges[ $vertexLabel ];
-        $edgesTo   = $this->getEdgesToVertex($vertex);
+        $vertex = $this->vertices[$vertexLabel];
+        $edgesFrom = $vertex->getDiscoveryEdges();
+        $edgesTo = $vertex->getInwardEdges();
 
-        /** @var Vertex[] $verticesReachable */
-        $verticesReachable = array_map(
-            function (Edge $e) {
-                return $e->sink;
-            },
-            $edgesFrom
-        );
+        $deleteEdge = function(Edge $e) {
+            $e->source->removeEdge($e);
+            $e->sink->removeEdge($e);
+            $key = array_search($e, $this->edges[$e->source->label], true);
+            unset($this->edges[$e->source->label][$key]);
+        };
 
-        /** @var Vertex[] $verticesReaching */
-        $verticesReaching = array_map(
-            function (Edge $e) {
-                return $e->source;
-            },
-            $edgesTo
-        );
+        //Delete edges to vertex
+        foreach ($edgesTo as $edge) {
+            $deleteEdge($edge);
+            $this->updateSource($edge->source);
+            $this->updateSink($edge->source);
+        }
 
-        $this->size -= count($edgesFrom);
+        //Delete edges from vertex
+        foreach ($edgesFrom as $edge) {
+            $deleteEdge($edge);
+            $this->updateSource($edge->sink);
+            $this->updateSink($edge->sink);
+        }
+
+        unset($this->edges[$vertexLabel]);
+
         $this->size -= count($edgesTo);
+        $this->size -= count($edgesFrom);
 
-        //delete edges to and from vertex
-        unset($this->edges[ $vertexLabel ]);
-        foreach ($verticesReaching as $v) {
-            $this->edges[ $v->label ] = array_filter(
-                $this->edges[ $v->label ],
-                function (Edge $e) use ($vertex) {
-                    return $e->sink !== $vertex;
-                }
-            );
+        $sourceKey = array_search($vertex, $this->sourceVertices, true);
+        $sinkKey = array_search($vertex, $this->sinkVertices, true);
+
+        if ($sourceKey !== false) {
+            unset($this->sourceVertices[$sourceKey]);
         }
-
-        //mark source and sink vertices if necessary
-
-        foreach ($verticesReaching as $v) {
-            if (empty($this->edges[ $v->label ])) {
-                $this->sinkVertices[ $v->label ] = $v;
-            }
+        if ($sinkKey !== false) {
+            unset($this->sinkVertices[$sinkKey]);
         }
-
-        foreach ($verticesReachable as $v) {
-            if ($v->getInwardEdges() === []) {
-                $this->sourceVertices[ $v->label ] = $v;
-            }
-        }
-
-        unset($this->sourceVertices[ $vertexLabel ]);
-        unset($this->sinkVertices[ $vertexLabel ]);
 
         //delete the vertex
-        unset($this->vertices[ $vertexLabel ]);
+        unset($this->vertices[$vertexLabel]);
     }
 
     /**
@@ -209,21 +199,16 @@ class Graph
 
     public function getEdgesFromVertex(Vertex $v)
     {
-        return $this->edges[ $v->label ];
+        return $this->edges[$v->label];
     }
 
     public function getEdgesToVertex(Vertex $v)
     {
-        $return = [];
-        foreach ($this->edges as $vertex => $edges) {
-            foreach ($edges as $edge) {
-                if ($edge->sink === $v) {
-                    $return[] = $edge;
-                }
-            }
-        }
-
-        return $return;
+        return $v->getInwardEdges();
     }
 
+    public function getEdges()
+    {
+        return $this->edges;
+    }
 }
